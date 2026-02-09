@@ -120,7 +120,7 @@ ls -la
 
 **ไฟล์ที่ควรเห็น:**
 - `docker-compose.yml` - Configuration file
-- `librenms.md` - คู่มือฉบับเต็ม
+- `README.md` - คู่มือฉบับเต็ม
 
 ### Step 1.3: Start LibreNMS Containers
 
@@ -206,7 +206,7 @@ Services: 0
 
 **⏱️ เวลา:** 20-30 นาที
 
-**📖 คู่มือฉบับเต็ม:** [mikrotik/mikrotik.md](mikrotik/mikrotik.md) (มีรายละเอียดทุกขั้นตอน)
+**📖 คู่มือฉบับเต็ม:** [mikrotik/README.md](mikrotik/README.md) (มีรายละเอียดทุกขั้นตอน)
 
 ### Step 2.1: ดาวน์โหลด RouterOS
 
@@ -515,7 +515,7 @@ ssh admin@192.168.56.10
 
 **⏱️ เวลา:** 15-20 นาที
 
-**📖 คู่มือฉบับเต็ม:** [librenms-api/librenms-api.md](librenms-api/librenms-api.md) (มีตัวอย่าง code ครบถ้วน)
+**📖 คู่มือฉบับเต็ม:** [librenms-api/README.md](librenms-api/README.md) (มีตัวอย่าง code ครบถ้วน)
 
 ### Step 4.1: สร้าง API Token
 
@@ -628,7 +628,7 @@ Speed:     1000.0 Mbps
 
 **⏱️ เวลา:** 15-20 นาที
 
-**📖 คู่มือฉบับเต็ม:** [nodered/nodered.md](nodered/nodered.md) (มี advanced flows และ troubleshooting)
+**📖 คู่มือฉบับเต็ม:** [nodered/README.md](nodered/README.md) (มี advanced flows และ troubleshooting)
 
 ### Step 5.1: เตรียม Environment
 
@@ -636,19 +636,8 @@ Speed:     1000.0 Mbps
 # เข้าโฟลเดอร์ Node-RED
 cd nodered
 
-# สร้าง directories สำหรับ Mosquitto MQTT Broker
-mkdir -p mosquitto/config mosquitto/data mosquitto/log nodered_data
-
-# สร้างไฟล์ config สำหรับ Mosquitto
-cat > mosquitto/config/mosquitto.conf << 'EOF'
-listener 1883
-allow_anonymous true
-listener 9001
-protocol websockets
-persistence true
-persistence_location /mosquitto/data/
-log_dest file /mosquitto/log/mosquitto.log
-EOF
+# สร้าง directory สำหรับ Node-RED data
+mkdir -p nodered_data
 ```
 
 ### Step 5.2: เชื่อมต่อ Docker Network
@@ -661,10 +650,10 @@ docker network create monitoring_network
 docker network connect monitoring_network librenms
 ```
 
-### Step 5.3: Start Node-RED และ MQTT Broker
+### Step 5.3: Start Node-RED
 
 ```bash
-# Start services
+# Start Node-RED container
 docker-compose up -d
 
 # ตรวจสอบสถานะ
@@ -674,8 +663,7 @@ docker-compose ps
 **Expected Output:**
 ```
 NAME        STATUS    PORTS
-nodered     Up        0.0.0.0:1880->1880/tcp
-mosquitto   Up        0.0.0.0:1883->1883/tcp, 0.0.0.0:9001->9001/tcp
+nodered     Up        0.0.0.0:1880->1880/tcp, 0.0.0.0:1883->1883/tcp
 ```
 
 ### Step 5.4: เข้าถึง Node-RED
@@ -684,45 +672,138 @@ mosquitto   Up        0.0.0.0:1883->1883/tcp, 0.0.0.0:9001->9001/tcp
 2. ไปที่: **http://localhost:1880**
 3. คุณจะเห็น Node-RED Flow Editor
 
-### Step 5.5: Import Flow Example
+### Step 5.5: ติดตั้ง Aedes MQTT Broker
 
-1. คลิก **Menu (≡)** มุมบนขวา
-2. เลือก **Import**
-3. คลิก **select a file to import**
-4. เลือกไฟล์ `flow-example.json`
-5. คลิก **Import**
+1. ใน Node-RED คลิก **Menu (≡)** → **Manage palette**
+2. ไปที่แท็บ **Install**
+3. ค้นหา `node-red-contrib-aedes`
+4. คลิก **Install**
+5. คลิก **Install** อีกครั้งเพื่อยืนยัน
+6. รอจนการติดตั้งเสร็จ
 
-**ควรเห็น Flow ที่มี 5 nodes:**
-- 🔵 Inject (Every 1 minute)
-- 🟦 HTTP Request (Get ether1 status)
-- 🟨 Function (Extract ether1 data)
-- 🟪 MQTT Out (Publish to MQTT)
-- 🟩 Debug (Output)
+### Step 5.6: เพิ่ม Aedes Broker Node
 
-### Step 5.6: แก้ไข API Token
+1. ลาก **aedes broker** node จาก palette มาวางใน workspace
+2. Double-click เพื่อตั้งค่า:
+   - **Name:** `MQTT Broker`
+   - **Port:** `1883`
+   - คลิก **Done**
+3. คลิก **Deploy**
+
+**หมายเหตุ:** MQTT Broker จะรันภายใน Node-RED ไม่ต้อง container แยก
+
+### Step 5.7: สร้าง Flow
+
+#### 1. เพิ่ม Inject Node
+
+1. ลาก **inject** node มาวาง
+2. Double-click:
+   - **Name:** `Every 1 minute`
+   - **Repeat:** `interval` → `1` `minutes`
+   - คลิก **Done**
+
+#### 2. เพิ่ม HTTP Request Node
+
+1. ลาก **http request** node มาวาง
+2. Double-click:
+   - **Name:** `Get ether1 status`
+   - **Method:** `GET`
+   - **URL:** `http://librenms:8000/api/v0/devices/192.168.56.10/ports`
+   - **Headers:** เพิ่ม header
+     - **Name:** `X-Auth-Token`
+     - **Value:** `your-api-token-here` (ใส่ API Token จาก LAB 4)
+   - **Return:** `a parsed JSON object`
+   - คลิก **Done**
+
+#### 3. เพิ่ม Function Node
+
+1. ลาก **function** node มาวาง
+2. Double-click:
+   - **Name:** `Extract ether1 data`
+   - **Function:** ใส่ code:
+
+```javascript
+const ports = msg.payload.ports;
+const ether1 = ports.find(p => p.ifName === 'ether1');
+
+if (!ether1) {
+    node.error('ether1 not found', msg);
+    return null;
+}
+
+msg.payload = {
+    timestamp: new Date().toISOString(),
+    interface: ether1.ifName,
+    status: ether1.ifOperStatus,
+    adminStatus: ether1.ifAdminStatus,
+    speed: ether1.ifSpeed / 1000000,
+    mtu: ether1.ifMtu,
+    macAddress: ether1.ifPhysAddress,
+    statistics: {
+        inOctets: ether1.ifInOctets || 0,
+        outOctets: ether1.ifOutOctets || 0,
+        inPackets: ether1.ifInUcastPkts || 0,
+        outPackets: ether1.ifOutUcastPkts || 0,
+        inErrors: ether1.ifInErrors || 0,
+        outErrors: ether1.ifOutErrors || 0
+    }
+};
+
+msg.topic = 'mikrotik/ether1/status';
+return msg;
+```
+
+   - คลิก **Done**
+
+#### 4. เพิ่ม MQTT Output Node
+
+1. ลาก **mqtt out** node มาวาง
+2. Double-click:
+   - **Server:** คลิก pencil icon
+     - **Server:** `localhost`
+     - **Port:** `1883`
+     - คลิก **Add**
+   - **Topic:** ปล่อยว่าง (ใช้จาก msg.topic)
+   - **QoS:** `0`
+   - **Retain:** ✅ เปิด
+   - **Name:** `Publish to MQTT`
+   - คลิก **Done**
+
+#### 5. เพิ่ม Debug Node
+
+1. ลาก **debug** node มาวาง
+2. ต่อจาก Function node
+3. ตั้งชื่อ: `Debug output`
+
+### Step 5.8: เชื่อมต่อ Nodes
+
+เชื่อมต่อตามลำดับ:
+```
+[Inject] → [HTTP Request] → [Function] → [MQTT Out]
+                                   ↓
+                              [Debug]
+```
+
+### Step 5.9: Deploy Flow
 
 1. **Double-click** ที่ node **"Get ether1 status"** (HTTP Request)
 2. ในส่วน **Headers** → แก้ไข `X-Auth-Token`
 3. ใส่ API Token จาก LAB 4
 4. คลิก **Done**
 
-### Step 5.7: Deploy Flow
-
 1. คลิกปุ่ม **Deploy** มุมบนขวา
 2. รอจนเห็นข้อความ **"Successfully deployed"**
 
-### Step 5.8: ทดสอบ Flow
+### Step 5.10: ทดสอบ Flow
 
-**วิธีที่ 1: คลิกปุ่มทดสอบ**
-
-1. คลิกที่ปุ่มสีน้ำเงินซ้ายมือของ node **"Every 1 minute"**
+1. คลิกที่ปุ่มสีน้ำเงินซ้ายมือของ Inject node
 2. ดูใน **Debug** tab ขวามือ
 3. ควรเห็น JSON output พร้อมข้อมูล ether1
 
 **Expected Output:**
 ```json
 {
-  "timestamp": "2024-01-15T10:30:00.000Z",
+  "timestamp": "2026-02-09T15:30:00.000Z",
   "interface": "ether1",
   "status": "up",
   "adminStatus": "up",
@@ -740,42 +821,25 @@ mosquitto   Up        0.0.0.0:1883->1883/tcp, 0.0.0.0:9001->9001/tcp
 }
 ```
 
-### Step 5.9: Subscribe to MQTT Messages
+### Step 5.11: ทดสอบ MQTT (Optional)
 
-เปิด Terminal ใหม่:
+**วิธีที่ 1: ใช้ MQTT In Node**
+
+1. ลาก **mqtt in** node มาวาง
+2. ตั้งค่า Server: `localhost:1883`, Topic: `mikrotik/ether1/status`
+3. ต่อกับ debug node
+4. Deploy และทดสอบ
+
+**วิธีที่ 2: ใช้ mosquitto_sub**
 
 ```bash
-# Subscribe to MQTT topic
-docker run --rm --network monitoring_network eclipse-mosquitto:2.0 \
-  mosquitto_sub -h mosquitto -t "mikrotik/ether1/status" -v
-```
-
-หรือใช้ mosquitto_sub บนเครื่อง host:
-
-```bash
+# Subscribe จาก host machine
 mosquitto_sub -h localhost -t "mikrotik/ether1/status" -v
 ```
 
 **Expected Output:**
 ```
-mikrotik/ether1/status {"timestamp":"2024-01-15T10:30:00.000Z","interface":"ether1","status":"up",...}
-```
-
-### Step 5.10: ทดสอบ Real-time Monitoring
-
-1. Flow จะทำงานอัตโนมัติทุก **1 นาที**
-2. คลิกปุ่มทดสอบอีกครั้ง เพื่อส่งข้อมูลทันที
-3. ดูข้อมูลใน Terminal ที่รัน mosquitto_sub
-
-**✅ ถ้าเห็นข้อมูลใน Terminal = MQTT working!**
-
-### Step 5.11: ดู MQTT Broker Logs (Optional)
-
-```bash
-# ดู Mosquitto logs
-docker-compose logs -f mosquitto
-
-# ควรเห็น connection และ publish messages
+mikrotik/ether1/status {"timestamp":"2026-02-09T15:30:00.000Z","interface":"ether1",...}
 ```
 
 ### 🎉 LAB 5 Complete!
@@ -784,10 +848,10 @@ docker-compose logs -f mosquitto
 
 **Achievement Unlocked:**
 - ✅ Node-RED flow-based programming
-- ✅ MQTT broker setup (Mosquitto)
+- ✅ MQTT broker setup (Aedes) - รันภายใน Node-RED
 - ✅ LibreNMS API integration ผ่าน Node-RED
 - ✅ Real-time data streaming via MQTT
-- ✅ IoT-ready monitoring system
+- ✅ IoT-ready monitoring system (ใช้ container เดียว)
 
 **MQTT Topic Structure:**
 ```
@@ -830,7 +894,7 @@ mikrotik/#              → ทุก message จาก mikrotik
 
 ## 📚 คู่มือเพิ่มเติม
 
-### 📖 [LibreNMS - คู่มือฉบับสมบูรณ์](librenms/librenms.md)
+### 📖 [LibreNMS - คู่มือฉบับสมบูรณ์](librenms/README.md)
 
 รายละเอียดครบถ้วนเกี่ยวกับ LibreNMS:
 - 🏗️ Architecture diagrams (Mermaid)
@@ -840,7 +904,7 @@ mikrotik/#              → ทุก message จาก mikrotik
 - 🔍 Troubleshooting (10+ ปัญหา)
 - 🎯 Best practices
 
-### 🔧 [MikroTik RouterOS - คู่มือฉบับสมบูรณ์](mikrotik/mikrotik.md)
+### 🔧 [MikroTik RouterOS - คู่มือฉบับสมบูรณ์](mikrotik/README.md)
 
 รายละเอียดครบถ้วนเกี่ยวกับ MikroTik:
 - 📦 Import & setup VirtualBox
@@ -850,7 +914,7 @@ mikrotik/#              → ทุก message จาก mikrotik
 - 🔍 Troubleshooting (8+ ปัญหา)
 - 🎯 Security best practices
 
-### 🔌 [LibreNMS API - คู่มือฉบับสมบูรณ์](librenms-api/librenms-api.md)
+### 🔌 [LibreNMS API - คู่มือฉบับสมบูรณ์](librenms-api/README.md)
 
 รายละเอียดครบถ้วนเกี่ยวกับ LibreNMS API:
 - 🔑 API Token creation และ management
@@ -861,7 +925,7 @@ mikrotik/#              → ทุก message จาก mikrotik
 - ⚠️ Error handling และ best practices
 - 🔒 Security considerations
 
-### 🔄 [Node-RED + MQTT - คู่มือฉบับสมบูรณ์](nodered/nodered.md)
+### 🔄 [Node-RED + MQTT - คู่มือฉบับสมบูรณ์](nodered/README.md)
 
 รายละเอียดครบถ้วนเกี่ยวกับ Node-RED และ MQTT:
 - 🏗️ Architecture overview (LibreNMS → Node-RED → MQTT)
@@ -983,8 +1047,8 @@ docker exec librenms lnms device:poll 192.168.56.10 -vvv
 ```
 
 **ดูคู่มือ Troubleshooting แบบละเอียดที่:**
-- [LibreNMS Troubleshooting](librenms/librenms.md#การแก้ไขปัญหา)
-- [MikroTik Troubleshooting](mikrotik/mikrotik.md#ตรวจสอบและแก้ไขปัญหา)
+- [LibreNMS Troubleshooting](librenms/README.md#การแก้ไขปัญหา)
+- [MikroTik Troubleshooting](mikrotik/README.md#ตรวจสอบและแก้ไขปัญหา)
 
 ---
 
@@ -1046,8 +1110,8 @@ docker exec librenms lnms device:poll 192.168.56.10 -vvv
 **คุณได้เรียนรู้การสร้างระบบ Network Monitoring แบบ Professional แล้ว!**
 
 *ดูเอกสารเพิ่มเติม:*
-- [📖 LibreNMS Full Guide](librenms/librenms.md)
-- [🔧 MikroTik Full Guide](mikrotik/mikrotik.md)
+- [📖 LibreNMS Full Guide](librenms/README.md)
+- [🔧 MikroTik Full Guide](mikrotik/README.md)
 
 **Happy Monitoring! 🚀**
 

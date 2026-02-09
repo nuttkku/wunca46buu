@@ -58,13 +58,6 @@ librenms-api/package-lock.json
 
 # Ignore Node-RED runtime data
 nodered/nodered_data/
-nodered/mosquitto/data/
-nodered/mosquitto/log/
-
-# Allow Mosquitto config but not data/logs
-!nodered/mosquitto/
-!nodered/mosquitto/config/
-!nodered/mosquitto/config/*.conf
 
 # Allow images
 !picture/

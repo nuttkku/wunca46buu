@@ -1,31 +1,17 @@
 version: '3.8'
 
 services:
-  # Mosquitto MQTT Broker
-  mosquitto:
-    image: eclipse-mosquitto:2.0
-    container_name: mosquitto
-    ports:
-      - "1883:1883"      # MQTT
-      - "9001:9001"      # WebSocket
-    volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
-    restart: unless-stopped
-
-  # Node-RED
+  # Node-RED with built-in MQTT Broker
   nodered:
     image: nodered/node-red:latest
     container_name: nodered
     ports:
-      - "1880:1880"
+      - "1880:1880"      # Node-RED UI
+      - "1883:1883"      # MQTT Broker (via Aedes node)
     volumes:
       - ./nodered_data:/data
     environment:
       - TZ=Asia/Bangkok
-    depends_on:
-      - mosquitto
     restart: unless-stopped
 
 networks:
