@@ -1,6 +1,6 @@
 # Docker volumes - ข้อมูลที่เกิดจาก runtime
 db/
-librenms/
+librenms/*
 
 # Environment files ที่มี sensitive data
 .env
