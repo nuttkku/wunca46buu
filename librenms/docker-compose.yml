@@ -11,18 +11,19 @@ services:
     volumes:
       - ./db:/var/lib/mysql
     environment:
-      TZ: "Asia/Bangkok"
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: "librenms"
-      MYSQL_USER: "librenms"
-      MYSQL_PASSWORD: "librenms"
+      TZ: ${TZ:-Asia/Bangkok}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-librenms}
+      MYSQL_USER: ${MYSQL_USER:-librenms}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     restart: always
 
   redis:
     image: redis:7-alpine
     container_name: librenms_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
-      TZ: "Asia/Bangkok"
+      TZ: ${TZ:-Asia/Bangkok}
     restart: always
 
   librenms:
@@ -38,23 +39,25 @@ services:
     volumes:
       - ./librenms:/data
     environment:
-      TZ: "Asia/Bangkok"
-      PUID: "1000"
-      PGID: "1000"
-      DB_HOST: "db"
-      DB_NAME: "librenms"
-      DB_USER: "librenms"
-      DB_PASSWORD: "librenms"
-      DB_TIMEOUT: "60"
-      CACHE_DRIVER: "redis"
-      SESSION_DRIVER: "redis"
-      REDIS_HOST: "redis"
-      REDIS_PORT: "6379"
-      REDIS_DB: "0"
-      LIBRENMS_SNMP_COMMUNITY: "public"
-      LIBRENMS_WEATHERMAP: "false"
+      TZ: ${TZ:-Asia/Bangkok}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      APP_KEY: ${APP_KEY}
+      DB_HOST: ${DB_HOST:-db}
+      DB_NAME: ${DB_NAME:-librenms}
+      DB_USER: ${DB_USER:-librenms}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_TIMEOUT: ${DB_TIMEOUT:-60}
+      CACHE_DRIVER: ${CACHE_DRIVER:-redis}
+      SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      LIBRENMS_SNMP_COMMUNITY: ${LIBRENMS_SNMP_COMMUNITY}
+      LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
     ports:
-      - "8000:8000"
+      - "${LIBRENMS_PORT:-8000}:8000"
     restart: always
 
   dispatcher:
@@ -70,17 +73,18 @@ services:
     volumes:
       - ./librenms:/data
     environment:
-      TZ: "Asia/Bangkok"
-      PUID: "1000"
-      PGID: "1000"
-      DB_HOST: "db"
-      DB_NAME: "librenms"
-      DB_USER: "librenms"
-      DB_PASSWORD: "librenms"
-      DB_TIMEOUT: "60"
-      REDIS_HOST: "redis"
-      REDIS_PORT: "6379"
-      REDIS_DB: "0"
+      TZ: ${TZ:-Asia/Bangkok}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      DB_HOST: ${DB_HOST:-db}
+      DB_NAME: ${DB_NAME:-librenms}
+      DB_USER: ${DB_USER:-librenms}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_TIMEOUT: ${DB_TIMEOUT:-60}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       SIDECAR_DISPATCHER: "1"
       DISPATCHER_NODE_ID: "dispatcher1"
     restart: always

@@ -6,12 +6,12 @@ services:
     image: nodered/node-red:latest
     container_name: nodered
     ports:
-      - "1880:1880"      # Node-RED UI
-      - "1883:1883"      # MQTT Broker (via Aedes node)
+      - "${NODERED_PORT:-1880}:1880"      # Node-RED UI
+      - "${MQTT_PORT:-1883}:1883"         # MQTT Broker (via Aedes node)
     volumes:
       - ./nodered_data:/data
     environment:
-      - TZ=Asia/Bangkok
+      - TZ=${TZ:-Asia/Bangkok}
     restart: unless-stopped
 
 networks:

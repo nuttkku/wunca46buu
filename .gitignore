@@ -5,6 +5,9 @@ librenms/*
 # Environment files ที่มี sensitive data
 .env
 *.env
+# แต่ให้เก็บ .env.example
+!.env.example
+!**/.env.example
 
 # Scripts ที่ไม่จำเป็น
 init-user.sh
