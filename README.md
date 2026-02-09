@@ -159,9 +159,32 @@ ls -la
 
 **ไฟล์ที่ควรเห็น:**
 - `docker-compose.yml` - Configuration file
+- `.env.example` - ตัวอย่างไฟล์ environment variables
 - `README.md` - คู่มือฉบับเต็ม
 
-### Step 1.3: Start LibreNMS Containers
+### Step 1.3: (Optional) ตั้งค่า Environment Variables
+
+> 💡 **สำหรับ Workshop:** ข้ามขั้นตอนนี้ได้! Docker Compose จะใช้ค่า default ที่ปลอดภัยพอสำหรับการเรียนรู้
+>
+> 🔒 **สำหรับ Production:** ต้องทำขั้นตอนนี้! อ่านคู่มือในส่วน "Security Setup" ของ [librenms/README.md](librenms/README.md)
+
+ถ้าต้องการเปลี่ยนค่า default (เช่น รหัสผ่าน, port):
+
+```bash
+# Copy ไฟล์ตัวอย่าง
+cp .env.example .env
+
+# แก้ไขค่าที่ต้องการ (optional)
+nano .env
+
+# ตัวอย่างค่าที่อาจต้องเปลี่ยน:
+# - LIBRENMS_PORT=8000  (ถ้า port 8000 ถูกใช้แล้ว)
+# - MYSQL_PASSWORD=librenms  (ถ้าต้องการรหัสผ่านอื่น)
+```
+
+**สำหรับ Workshop ให้ข้ามไปขั้นตอนถัดไป →**
+
+### Step 1.4: Start LibreNMS Containers
 
 ```bash
 # Start ทุก services (MariaDB, Redis, LibreNMS, Dispatcher)
@@ -182,7 +205,7 @@ librenms_dispatcher    Up        -
 
 ✅ **All 4 containers ต้องมีสถานะ "Up"**
 
-### Step 1.4: ดู Logs (Optional)
+### Step 1.5: ดู Logs (Optional)
 
 ```bash
 # ดู logs เพื่อตรวจสอบการทำงาน
@@ -197,7 +220,7 @@ docker-compose logs -f librenms
 
 **กด `Ctrl+C` เพื่อออกจากโหมดดู logs**
 
-### Step 1.5: สร้าง Admin User
+### Step 1.6: สร้าง Admin User
 
 ```bash
 # สร้าง admin user สำหรับ login
@@ -213,7 +236,7 @@ User admin added successfully
 - Username: `admin`
 - Password: `Admin@123`
 
-### Step 1.6: เข้าถึง LibreNMS Web Interface
+### Step 1.7: เข้าถึง LibreNMS Web Interface
 
 1. เปิด Web Browser
 2. เข้าไปที่: **http://localhost:8000**
@@ -558,7 +581,32 @@ ssh admin@192.168.56.10
 
 **🎓 ส่วนที่ 2 ของงานอบรม:** LAB นี้เป็นใจความสำคัญ - เรียนรู้การเข้าถึงข้อมูลผ่าน API เพื่อนำไปสร้างระบบแสดงผลแบบ custom
 
-### Step 4.1: สร้าง API Token
+### Step 4.1: ตั้งค่า Environment Variables (สำหรับ Node.js Scripts)
+
+> 💡 **สำหรับ Workshop:** ในขั้นตอนนี้เราจะใช้ `.env` file เพื่อเก็บ API Token อย่างปลอดภัย
+
+```bash
+# เข้าโฟลเดอร์ librenms-api
+cd librenms-api
+
+# ติดตั้ง dependencies (ถ้ายังไม่ได้ติดตั้ง)
+npm install
+
+# Copy ไฟล์ .env.example เป็น .env
+cp .env.example .env
+```
+
+ไฟล์ `.env` จะมีหน้าตาแบบนี้:
+
+```bash
+API_URL=http://localhost:8000/api/v0
+API_TOKEN=your-api-token-here
+DEVICE_IP=192.168.56.10
+```
+
+**ยังไม่ต้องแก้ไขตอนนี้** - เราจะใส่ API Token ในขั้นตอนถัดไป
+
+### Step 4.2: สร้าง API Token
 
 1. Login เข้า LibreNMS: `http://localhost:8000`
 2. คลิก **Username** (มุมบนขวา) → **My Settings**
@@ -572,7 +620,33 @@ ssh admin@192.168.56.10
 Token: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 ```
 
-### Step 4.2: ทดสอบ API ด้วย cURL
+### Step 4.3: บันทึก API Token ลงใน .env File
+
+```bash
+# แก้ไขไฟล์ .env
+nano .env
+
+# หรือใช้ text editor อื่นที่ชอบ
+```
+
+แก้บรรทัดนี้:
+```bash
+# Before
+API_TOKEN=your-api-token-here
+
+# After (ใส่ token ที่ได้จาก LibreNMS)
+API_TOKEN=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+```
+
+บันทึกไฟล์ แล้วตรวจสอบ:
+```bash
+# ตรวจสอบว่าไฟล์ถูกต้อง (อย่าแสดง token ต่อหน้าคนอื่น!)
+cat .env
+```
+
+> 🔒 **Security Note:** ไฟล์ `.env` ถูกป้องกันโดย `.gitignore` แล้ว จะไม่ถูก commit เข้า git
+
+### Step 4.4: ทดสอบ API ด้วย cURL
 
 ```bash
 # ดึงรายการอุปกรณ์ทั้งหมด
@@ -596,7 +670,7 @@ curl -H "X-Auth-Token: YOUR_TOKEN" \
 }
 ```
 
-### Step 4.3: ดึงข้อมูล MikroTik
+### Step 4.5: ดึงข้อมูล MikroTik
 
 ```bash
 # ดึงข้อมูลอุปกรณ์
@@ -608,48 +682,64 @@ curl -H "X-Auth-Token: YOUR_TOKEN" \
   http://localhost:8000/api/v0/devices/192.168.56.10/ports
 ```
 
-### Step 4.4: ดึงสถานะ ether1 ด้วย Python
+### Step 4.6: ทดสอบ Node.js Scripts (ใช้ .env file)
 
-สร้างไฟล์ `check_ether1.py`:
-
-```python
-import requests
-import json
-
-API_URL = "http://localhost:8000/api/v0"
-API_TOKEN = "your-token-here"  # เปลี่ยนเป็น token จริง
-
-headers = {"X-Auth-Token": API_TOKEN}
-
-# Get all ports
-response = requests.get(
-    f"{API_URL}/devices/192.168.56.10/ports",
-    headers=headers
-)
-
-ports = response.json()['ports']
-
-# Find ether1
-for port in ports:
-    if port['ifName'] == 'ether1':
-        print(f"Interface: {port['ifName']}")
-        print(f"Status:    {port['ifOperStatus'].upper()}")
-        print(f"Speed:     {port['ifSpeed'] / 1000000} Mbps")
-        break
-```
-
-รันสคริปต์:
+ตอนนี้เราจะรันสคริปต์ที่เตรียมไว้แล้ว ซึ่งจะอ่านค่าจากไฟล์ `.env` โดยอัตโนมัติ:
 
 ```bash
-python3 check_ether1.py
+# ตรวจสอบสถานะ ether1
+node check-ether1.js
 ```
 
-**Output:**
+**Expected Output:**
 ```
-Interface: ether1
-Status:    UP
-Speed:     1000.0 Mbps
+🔍 Checking ether1 status...
+
+==================================================
+📡 MikroTik ether1 Status
+==================================================
+Interface:      ether1
+Description:    N/A
+Alias:          N/A
+Type:           ethernetCsmacd
+Status:         UP ✅
+Admin Status:   up
+Speed:          1000 Mbps
+MTU:            1500
+MAC Address:    XX:XX:XX:XX:XX:XX
+==================================================
+
+📊 Traffic Statistics:
+--------------------------------------------------
+In Octets:      1.23 GB
+Out Octets:     789.01 MB
+In Packets:     1,234
+Out Packets:    5,678
+In Errors:      0
+Out Errors:     0
+--------------------------------------------------
+
+✅ Check completed successfully
 ```
+
+ทดสอบสคริปต์อื่นๆ:
+
+```bash
+# แสดงรายการอุปกรณ์ทั้งหมด
+node list-devices.js
+
+# Monitor แบบละเอียด
+node mikrotik-monitor.js
+
+# Monitor แบบ real-time (ทุก 5 วินาที)
+node monitor-realtime.js
+```
+
+> 💡 **ข้อดีของการใช้ .env:**
+> - ไม่ต้อง hardcode API Token ในโค้ด
+> - ปลอดภัย - ไฟล์ .env ไม่ถูก commit
+> - เปลี่ยน token ง่าย - แก้ที่เดียวใช้ได้ทุกสคริปต์
+> - พร้อมสำหรับ Production
 
 ### 🎉 LAB 4 Complete!
 
@@ -659,7 +749,9 @@ Speed:     1000.0 Mbps
 - ✅ API authentication with tokens
 - ✅ RESTful API concepts
 - ✅ Programmatic data retrieval
-- ✅ Python API integration
+- ✅ Node.js API integration
+- ✅ Environment variables management (.env files)
+- ✅ Secure credential storage
 
 ---
 
@@ -685,6 +777,10 @@ cd nodered
 # สร้าง directory สำหรับ Node-RED data
 mkdir -p nodered_data
 ```
+
+> 💡 **สำหรับ Workshop:** Node-RED ไม่ต้องใช้ `.env` file เพราะเราจะตั้งค่าผ่าน UI
+>
+> 🔒 **สำหรับ Production:** ดูขั้นตอน Security Setup ใน [nodered/README.md](nodered/README.md)
 
 ### Step 5.2: เชื่อมต่อ Docker Network
 
