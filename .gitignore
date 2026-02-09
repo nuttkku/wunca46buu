@@ -27,11 +27,14 @@ Thumbs.db
 !.gitignore
 !README.md
 !LICENSE
-!mikrotik.md
 
 # Allow documentation และ configuration ใน librenms/
 !librenms/librenms.md
 !librenms/docker-compose.yml
+
+# Allow MikroTik documentation
+!mikrotik/
+!mikrotik/*.md
 
 # Allow images
 !picture/
