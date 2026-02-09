@@ -624,11 +624,13 @@ Speed:     1000.0 Mbps
 
 ## 🧪 LAB 5: Node-RED + MQTT Integration (Optional)
 
-**🎯 วัตถุประสงค์:** ใช้ Node-RED เป็น Flow-based platform ดึงข้อมูลจาก LibreNMS API และส่งต่อผ่าน MQTT
+**🎯 วัตถุประสงค์:** ใช้ Node-RED เป็น Flow-based platform ดึงข้อมูลจาก LibreNMS API และส่งต่อผ่าน MQTT พร้อม location data สำหรับแผนที่ 3D
 
 **⏱️ เวลา:** 15-20 นาที
 
 **📖 คู่มือฉบับเต็ม:** [nodered/README.md](nodered/README.md) (มี advanced flows และ troubleshooting)
+
+**🎓 ส่วนหนึ่งของงานอบรม:** [ปฏิวัติการ Monitor: เปลี่ยนข้อมูล Network ให้เห็นภาพบนแผนที่ 3 มิติ](https://wunca46.uni.net.th/workshop-detail/15)
 
 ### Step 5.1: เตรียม Environment
 
@@ -731,8 +733,20 @@ if (!ether1) {
     return null;
 }
 
+// ตำแหน่งของอุปกรณ์ (สำหรับแผนที่ 3D)
+const location = {
+    lat: 16.4322,        // Latitude
+    long: 102.8236,      // Longitude
+    altitude: 170        // ความสูง (เมตร)
+};
+
 msg.payload = {
     timestamp: new Date().toISOString(),
+    device: {
+        ip: '192.168.56.10',
+        name: 'MikroTik-Router',
+        location: location
+    },
     interface: ether1.ifName,
     status: ether1.ifOperStatus,
     adminStatus: ether1.ifAdminStatus,
@@ -804,6 +818,15 @@ return msg;
 ```json
 {
   "timestamp": "2026-02-09T15:30:00.000Z",
+  "device": {
+    "ip": "192.168.56.10",
+    "name": "MikroTik-Router",
+    "location": {
+      "lat": 16.4322,
+      "long": 102.8236,
+      "altitude": 170
+    }
+  },
   "interface": "ether1",
   "status": "up",
   "adminStatus": "up",
@@ -820,6 +843,8 @@ return msg;
   }
 }
 ```
+
+**หมายเหตุ:** Payload รวมข้อมูล location (lat, long, altitude) สำหรับแสดงบนแผนที่ 3D
 
 ### Step 5.11: ทดสอบ MQTT (Optional)
 
@@ -839,8 +864,31 @@ mosquitto_sub -h localhost -t "mikrotik/ether1/status" -v
 
 **Expected Output:**
 ```
-mikrotik/ether1/status {"timestamp":"2026-02-09T15:30:00.000Z","interface":"ether1",...}
+mikrotik/ether1/status {"timestamp":"2026-02-09T15:30:00.000Z","device":{"ip":"192.168.56.10","name":"MikroTik-Router","location":{"lat":16.4322,"long":102.8236,"altitude":170}},...}
 ```
+
+### 📍 แก้ไข Location Data
+
+เปิดไฟล์ Function node และแก้ไขค่า `location` ตามตำแหน่งจริงของอุปกรณ์:
+
+```javascript
+const location = {
+    lat: 16.4322,        // Latitude (ละติจูด)
+    long: 102.8236,      // Longitude (ลองจิจูด)
+    altitude: 170        // ความสูงจากระดับน้ำทะเล (เมตร)
+};
+```
+
+**วิธีหาพิกัด:**
+1. เปิด Google Maps
+2. คลิกขวาที่ตำแหน่งที่ต้องการ
+3. คลิก "What's here?"
+4. คัดลอกพิกัด (เช่น `16.4322, 102.8236`)
+
+**ตัวอย่างพิกัดในประเทศไทย:**
+- มหาวิทยาลัยขอนแก่น: `lat: 16.4322, long: 102.8236, altitude: 170`
+- กรุงเทพฯ: `lat: 13.7563, long: 100.5018, altitude: 15`
+- เชียงใหม่: `lat: 18.8042, long: 98.9219, altitude: 310`
 
 ### 🎉 LAB 5 Complete!
 
@@ -852,13 +900,37 @@ mikrotik/ether1/status {"timestamp":"2026-02-09T15:30:00.000Z","interface":"ethe
 - ✅ LibreNMS API integration ผ่าน Node-RED
 - ✅ Real-time data streaming via MQTT
 - ✅ IoT-ready monitoring system (ใช้ container เดียว)
+- ✅ Location data สำหรับแผนที่ 3D (lat, long, altitude)
+
+**MQTT Payload Structure:**
+```json
+{
+  "device": {
+    "ip": "192.168.56.10",
+    "name": "MikroTik-Router",
+    "location": {
+      "lat": 16.4322,      // สำหรับแสดงบนแผนที่
+      "long": 102.8236,
+      "altitude": 170
+    }
+  },
+  "interface": "ether1",
+  "status": "up",
+  ...
+}
+```
 
 **MQTT Topic Structure:**
 ```
-mikrotik/ether1/status  → สถานะ ether1
+mikrotik/ether1/status  → สถานะ ether1 พร้อม location
 mikrotik/+/status       → สถานะทุก interface (wildcard)
 mikrotik/#              → ทุก message จาก mikrotik
 ```
+
+**การใช้งาน Location Data:**
+- แสดงตำแหน่งอุปกรณ์บนแผนที่ 3D
+- Visualize network topology แบบ real-time
+- Geolocation-based monitoring และ alerts
 
 ---
 
