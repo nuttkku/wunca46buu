@@ -169,9 +169,10 @@ docker-compose down
 ```
 wunca46buu/
 ├── README.md                    # ← คุณอยู่ที่นี่
-├── mikrotik.md                 # 🔧 คู่มือ MikroTik RouterOS Setup
 ├── picture/
 │   └── wunca46.jpg            # Banner image
+├── mikrotik/
+│   └── mikrotik.md            # 🔧 คู่มือ MikroTik RouterOS Setup
 ├── librenms/
 │   ├── docker-compose.yml      # Docker Compose configuration
 │   ├── librenms.md            # 📖 คู่มือ LibreNMS ฉบับสมบูรณ์
