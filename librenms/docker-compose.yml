@@ -1,7 +1,30 @@
-version: "3.5"
-
 services:
-  # LibreNMS หลัก
+  db:
+    image: mariadb:10.11
+    container_name: librenms_db
+    command:
+      - "mysqld"
+      - "--innodb-file-per-table=1"
+      - "--lower-case-table-names=1"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      TZ: "Asia/Bangkok"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: "librenms"
+      MYSQL_USER: "librenms"
+      MYSQL_PASSWORD: "librenms"
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: librenms_redis
+    environment:
+      TZ: "Asia/Bangkok"
+    restart: always
+
   librenms:
     image: librenms/librenms:latest
     container_name: librenms
@@ -9,54 +32,31 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
-    ports:
-      - "8000:8000"
-      - "162:162/udp"  # SNMP Trap
     depends_on:
       - db
       - redis
     volumes:
       - ./librenms:/data
     environment:
-      - TZ=Asia/Bangkok
-      - PUID=1000
-      - PGID=1000
-      - DB_HOST=db
-      - DB_NAME=librenms
-      - DB_USER=librenms
-      - DB_PASSWORD=librenms_password
-      - DB_TIMEOUT=60
-    restart: unless-stopped
+      TZ: "Asia/Bangkok"
+      PUID: "1000"
+      PGID: "1000"
+      DB_HOST: "db"
+      DB_NAME: "librenms"
+      DB_USER: "librenms"
+      DB_PASSWORD: "librenms"
+      DB_TIMEOUT: "60"
+      CACHE_DRIVER: "redis"
+      SESSION_DRIVER: "redis"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
+      LIBRENMS_SNMP_COMMUNITY: "public"
+      LIBRENMS_WEATHERMAP: "false"
+    ports:
+      - "8000:8000"
+    restart: always
 
-  # ฐานข้อมูล
-  db:
-    image: mariadb:10.11
-    container_name: librenms_db
-    command:
-      - "mysqld"
-      - "--innodb-file-per-table=1"
-      - "--lower-case-table-names=0"
-      - "--character-set-server=utf8mb4"
-      - "--collation-server=utf8mb4_unicode_ci"
-    volumes:
-      - ./db:/var/lib/mysql
-    environment:
-      - TZ=Asia/Bangkok
-      - MYSQL_ROOT_PASSWORD=root_password
-      - MYSQL_DATABASE=librenms
-      - MYSQL_USER=librenms
-      - MYSQL_PASSWORD=librenms_password
-    restart: unless-stopped
-
-  # Redis สำหรับ Cache
-  redis:
-    image: redis:7-alpine
-    container_name: librenms_redis
-    environment:
-      - TZ=Asia/Bangkok
-    restart: unless-stopped
-
-  # Dispatcher สำหรับ Polling
   dispatcher:
     image: librenms/librenms:latest
     container_name: librenms_dispatcher
@@ -66,26 +66,21 @@ services:
       - NET_RAW
     depends_on:
       - librenms
+      - redis
     volumes:
       - ./librenms:/data
     environment:
-      - TZ=Asia/Bangkok
-      - PUID=1000
-      - PGID=1000
-      - DB_HOST=db
-      - DB_NAME=librenms
-      - DB_USER=librenms
-      - DB_PASSWORD=librenms_password
-      - DISPATCHER_NODE_ID=dispatcher1
-      - SIDECAR_DISPATCHER=1
-    restart: unless-stopped
-
-  # SNMP Simulator (สำหรับทดสอบ)
-  snmpsim:
-    image: tandrup/snmpsim
-    container_name: snmp_simulator
-    ports:
-      - "1161:161/udp"
-    environment:
-      - SNMPSIM_ARGS=--agent-udpv4-endpoint=0.0.0.0:161
-    restart: unless-stopped
+      TZ: "Asia/Bangkok"
+      PUID: "1000"
+      PGID: "1000"
+      DB_HOST: "db"
+      DB_NAME: "librenms"
+      DB_USER: "librenms"
+      DB_PASSWORD: "librenms"
+      DB_TIMEOUT: "60"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
+      SIDECAR_DISPATCHER: "1"
+      DISPATCHER_NODE_ID: "dispatcher1"
+    restart: always

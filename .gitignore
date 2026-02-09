@@ -1,0 +1,29 @@
+# Docker volumes - ข้อมูลที่เกิดจาก runtime
+db/
+librenms/
+
+# Environment files ที่มี sensitive data
+.env
+*.env
+
+# Scripts ที่ไม่จำเป็น
+init-user.sh
+*.sh
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# เก็บเฉพาะไฟล์เหล่านี้
+!docker-compose.yml
+!.gitignore
+!README.md
+!LICENSE
