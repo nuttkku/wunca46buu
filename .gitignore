@@ -36,10 +36,18 @@ Thumbs.db
 !mikrotik/
 !mikrotik/*.md
 
-# Allow LibreNMS API documentation
+# Allow LibreNMS API documentation and examples
 !librenms-api/
 !librenms-api/*.md
-!librenms-api/*.py
+!librenms-api/*.js
+!librenms-api/*.json
+!librenms-api/.env.example
+!librenms-api/README.md
+
+# Ignore Node.js artifacts in librenms-api/
+librenms-api/.env
+librenms-api/node_modules/
+librenms-api/package-lock.json
 
 # Allow images
 !picture/
