@@ -1,3 +1,19 @@
+# LibreNMS Docker Compose Configuration
+# =============================================
+# ⚠️ WARNING: Default values below are for WORKSHOP/LEARNING purposes only!
+#
+# For Workshop: You can run `docker-compose up -d` directly (uses defaults)
+# For Production: Create .env file first (see .env.example)
+#
+# Quick Start (Workshop):
+#   docker-compose up -d
+#
+# Production Setup:
+#   cp .env.example .env
+#   nano .env  # Change all passwords!
+#   docker-compose up -d
+# =============================================
+
 services:
   db:
     image: mariadb:10.11
@@ -12,16 +28,16 @@ services:
       - ./db:/var/lib/mysql
     environment:
       TZ: ${TZ:-Asia/Bangkok}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-librenms_root}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-librenms}
       MYSQL_USER: ${MYSQL_USER:-librenms}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-librenms}
     restart: always
 
   redis:
     image: redis:7-alpine
     container_name: librenms_redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     environment:
       TZ: ${TZ:-Asia/Bangkok}
     restart: always
@@ -42,19 +58,19 @@ services:
       TZ: ${TZ:-Asia/Bangkok}
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      APP_KEY: ${APP_KEY}
+      APP_KEY: ${APP_KEY:-base64:changeme_generate_random_32_char_key_here}
       DB_HOST: ${DB_HOST:-db}
       DB_NAME: ${DB_NAME:-librenms}
       DB_USER: ${DB_USER:-librenms}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD:-librenms}
       DB_TIMEOUT: ${DB_TIMEOUT:-60}
       CACHE_DRIVER: ${CACHE_DRIVER:-redis}
       SESSION_DRIVER: ${SESSION_DRIVER:-redis}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      LIBRENMS_SNMP_COMMUNITY: ${LIBRENMS_SNMP_COMMUNITY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      LIBRENMS_SNMP_COMMUNITY: ${LIBRENMS_SNMP_COMMUNITY:-public}
       LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
     ports:
       - "${LIBRENMS_PORT:-8000}:8000"
@@ -79,12 +95,12 @@ services:
       DB_HOST: ${DB_HOST:-db}
       DB_NAME: ${DB_NAME:-librenms}
       DB_USER: ${DB_USER:-librenms}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD:-librenms}
       DB_TIMEOUT: ${DB_TIMEOUT:-60}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       SIDECAR_DISPATCHER: "1"
       DISPATCHER_NODE_ID: "dispatcher1"
     restart: always
