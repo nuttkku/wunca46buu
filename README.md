@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="picture/wunca46.jpg" alt="WUNCA46 Banner" width="100%" style="max-width: 1200px; border-radius: 10px;">
+</div>
+
+<br>
+
 # 📊 LibreNMS Docker Setup
 
 > 🚀 Network Monitoring System แบบ Open Source พร้อม Docker Compose
