@@ -824,6 +824,7 @@ mikrotik/#              → ทุก message จาก mikrotik
 - **ICMP:** สำหรับ ping monitoring
 - **HTTP:** สำหรับ web interface (TCP port 8000)
 - **SSH:** สำหรับ management (TCP port 22)
+- **MQTT:** สำหรับ IoT messaging (TCP port 1883)
 
 ---
 
@@ -859,6 +860,17 @@ mikrotik/#              → ทุก message จาก mikrotik
 - 🎯 ดึงข้อมูล MikroTik ผ่าน API
 - ⚠️ Error handling และ best practices
 - 🔒 Security considerations
+
+### 🔄 [Node-RED + MQTT - คู่มือฉบับสมบูรณ์](nodered/nodered.md)
+
+รายละเอียดครบถ้วนเกี่ยวกับ Node-RED และ MQTT:
+- 🏗️ Architecture overview (LibreNMS → Node-RED → MQTT)
+- 🐳 Docker Compose setup (Node-RED + Mosquitto)
+- 🔄 Flow-based programming concepts
+- 📡 MQTT topics และ payload structure
+- 💻 ตัวอย่าง Flows (basic + advanced)
+- 🎯 Real-time monitoring และ alerts
+- 🐛 Troubleshooting และ best practices
 
 ---
 
