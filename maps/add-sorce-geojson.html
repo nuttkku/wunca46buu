@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add a GeoJSON Sorce</title>
+    <meta property="og:description"
+        content="Add a GeoJSON line to a map using addSource, then style it using addLayer’s paint properties." />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.js'></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/bright', // Base map is Tile
+            center: [102.82122552134484,16.4729660983578],
+            zoom: 14.5
+        });
+
+        map.on('load', () => {
+            // Add a GeoJSON source
+            map.addSource('route', {
+                'type': 'geojson',
+                'data': {
+                    "type": "FeatureCollection",
+                    "features": [
+                        /// Your GeoJSON data
+                    ]
+                }
+            });
+            // Add a line layer and set Style for visual
+            map.addLayer({
+                'id': 'route',
+                'type': 'line',
+                'source': 'route',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#777',
+                    'line-width': 2
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
