@@ -31,5 +31,9 @@ Thumbs.db
 librenms/data/
 librenms/logs/
 librenms/rrd/
+librenms/db/
+librenms/librenms/
+librenms/.env
 nodered/nodered_data/node_modules/
 nodered/nodered_data/.npm/
+nodered/.env
