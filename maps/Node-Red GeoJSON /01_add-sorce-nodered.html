@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add a GeoJSON Sorce</title>
+    <meta property="og:description"
+        content="Add a GeoJSON line to a map using addSource, then style it using addLayer’s paint properties." />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.js'></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/bright', // Base map is Tile
+            center: [102.82122552134484,16.4729660983578],
+            zoom: 14.5
+        });
+
+        map.on('load', () => {
+            // Add a GeoJSON source from Node-RED endpoint
+            map.addSource('points', {
+                'type': 'geojson',
+                'data': 'https://wunca.vallaris.space/map'
+            });
+            // Add a circle layer for Point features
+            map.addLayer({
+                'id': 'points',
+                'type': 'circle',
+                'source': 'points',
+                'paint': {
+                    'circle-radius': 8,
+                    'circle-color': [
+                        'case',
+                        ['get', 'status'],
+                        '#00ff00',  // Green if status is true
+                        '#ff0000'   // Red if status is false
+                    ],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

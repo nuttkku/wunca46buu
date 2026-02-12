@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Add a GeoJSON Sorce</title>
+    <meta property="og:description"
+        content="Add a GeoJSON line to a map using addSource, then style it using addLayer’s paint properties." />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@5.17.0/dist/maplibre-gl.js'></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+        .mapboxgl-popup-content {
+            padding: 15px;
+            min-width: 200px;
+        }
+
+        .popup-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .popup-table th,
+        .popup-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .popup-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .popup-table tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/bright', // Base map is Tile
+            center: [102.82122552134484,16.4729660983578],
+            zoom: 14.5
+        });
+
+        map.on('load', () => {
+            // Add a GeoJSON source from Node-RED endpoint
+            map.addSource('points', {
+                'type': 'geojson',
+                'data': 'https://wunca.vallaris.space/map'
+            });
+            // Add a circle layer for Point features
+            map.addLayer({
+                'id': 'points',
+                'type': 'circle',
+                'source': 'points',
+                'paint': {
+                    'circle-radius': 8,
+                    'circle-color': [
+                        'case',
+                        ['==', ['get', 'status'], true],
+                        '#00ff00',  // Green if status is true
+                        '#ff0000'   // Red if status is false
+                    ],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+            // Add labels over points
+            map.addLayer({
+                'id': 'point-labels',
+                'type': 'symbol',
+                'source': 'points',
+                'layout': {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+                    'text-size': 12,
+                    'text-anchor': 'center',
+                    'text-offset': [0, -1.5]  // Offset label above the point
+                },
+                'paint': {
+                    'text-color': '#000000',  // Black font
+                    'text-halo-color': '#ffffff',  // White halo
+                    'text-halo-width': 2  // Halo width
+                }
+            });
+
+            // Create popup
+            const popup = new maplibregl.Popup({
+                closeButton: true,
+                closeOnClick: false
+            });
+
+            // Function to create properties table
+            function createPropertiesTable(properties) {
+                let tableHTML = '<table class="popup-table"><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>';
+                
+                for (const [key, value] of Object.entries(properties)) {
+                    // Format the value for display
+                    let displayValue = value;
+                    if (typeof value === 'boolean') {
+                        displayValue = value ? 'true' : 'false';
+                    } else if (value === null || value === undefined) {
+                        displayValue = 'N/A';
+                    } else {
+                        displayValue = String(value);
+                    }
+                    
+                    tableHTML += `<tr><td><strong>${key}</strong></td><td>${displayValue}</td></tr>`;
+                }
+                
+                tableHTML += '</tbody></table>';
+                return tableHTML;
+            }
+
+            // Add click event to show popup with properties table
+            map.on('click', 'points', (e) => {
+                const coordinates = e.lngLat;
+                const properties = e.features[0].properties;
+                
+                const tableHTML = createPropertiesTable(properties);
+                
+                popup
+                    .setLngLat(coordinates)
+                    .setHTML(tableHTML)
+                    .addTo(map);
+            });
+
+            // Change cursor to pointer on hover
+            map.on('mouseenter', 'points', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'points', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    </script>
+</body>
+
+</html>

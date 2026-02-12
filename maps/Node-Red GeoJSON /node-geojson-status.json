@@ -1,0 +1,228 @@
+[
+    {
+        "id": "f6f2187d.f17ca8",
+        "type": "tab",
+        "label": "FeatureCollection Status",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "4e0345f1ef4077fe",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "false",
+        "payloadType": "bool",
+        "x": 150,
+        "y": 460,
+        "wires": [
+            [
+                "5f210638caef6c80"
+            ]
+        ]
+    },
+    {
+        "id": "5f210638caef6c80",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Geojson Format",
+        "func": "let point = {\n  \"type\": \"Feature\",\n  \"properties\": {\n    \"status\" : msg.payload\n  },\n  \"geometry\": {\n    \"coordinates\": [\n      102.82754999179139,\n      16.4448140454746\n    ],\n    \"type\": \"Point\"\n  }\n}\n\nmsg.payload = point\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 460,
+        "wires": [
+            [
+                "7798a788e5cc55b5"
+            ]
+        ]
+    },
+    {
+        "id": "b299f7d14e781a67",
+        "type": "debug",
+        "z": "f6f2187d.f17ca8",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "95ec0a4364513e71",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "url": "/map",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 320,
+        "wires": [
+            [
+                "169d138f2b998463"
+            ]
+        ]
+    },
+    {
+        "id": "66d8b453ee3bd3f5",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 610,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "7798a788e5cc55b5",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Save Context",
+        "func": "flow.set(\"point_1\",msg.payload)\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 460,
+        "wires": [
+            [
+                "b299f7d14e781a67"
+            ]
+        ]
+    },
+    {
+        "id": "169d138f2b998463",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Make FeatureCollections",
+        "func": "let feature_collection = {\n  \"type\": \"FeatureCollection\",\n  \"features\": [\n    flow.get(\"point_1\"),\n    flow.get(\"point_2\")\n  ]\n}\nmsg.payload = feature_collection\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 320,
+        "wires": [
+            [
+                "66d8b453ee3bd3f5"
+            ]
+        ]
+    },
+    {
+        "id": "31d116b7cb0b7ba6",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "false",
+        "payloadType": "bool",
+        "x": 150,
+        "y": 540,
+        "wires": [
+            [
+                "8a0cc202a9b28994"
+            ]
+        ]
+    },
+    {
+        "id": "8a0cc202a9b28994",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Geojson Format",
+        "func": "let point = {\n  \"type\": \"Feature\",\n  \"properties\": {\n    \"status\" : msg.payload\n  },\n  \"geometry\": {\n    \"coordinates\": [\n      102.79073083181987,\n      16.4655764596137\n    ],\n    \"type\": \"Point\"\n  }\n}\n\nmsg.payload = point\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 540,
+        "wires": [
+            [
+                "af8103986f6d4f2e"
+            ]
+        ]
+    },
+    {
+        "id": "68e6911fd2249334",
+        "type": "debug",
+        "z": "f6f2187d.f17ca8",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "af8103986f6d4f2e",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Save Context",
+        "func": "flow.set(\"point_2\",msg.payload)\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 540,
+        "wires": [
+            [
+                "68e6911fd2249334"
+            ]
+        ]
+    }
+]
