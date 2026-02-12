@@ -840,22 +840,26 @@ nodered     Up        0.0.0.0:1880->1880/tcp, 0.0.0.0:1883->1883/tcp
 
 1. ลาก **inject** node มาวาง
 2. Double-click:
-   - **Name:** `Every 1 minute`
-   - **Repeat:** `interval` → `1` `minutes`
+   - **Name:** `Every 30 seconds`
+   - **Repeat:** `interval` → `30` `seconds`
    - คลิก **Done**
 
 #### 2. เพิ่ม HTTP Request Node
 
 1. ลาก **http request** node มาวาง
 2. Double-click:
-   - **Name:** `Get ether1 status`
+   - **Name:** `Get mikrotik status`
    - **Method:** `GET`
-   - **URL:** `http://librenms:8000/api/v0/devices/192.168.56.10/ports`
+   - **URL:** `http://librenms:8000/api/v0/ports?device_id=1&columns=port_id,ifName,ifOperStatus,ifAdminStatus,ifSpeed,ifMtu,ifPhysAddress,ifInOctets,ifOutOctets,ifInUcastPkts,ifOutUcastPkts,ifInErrors,ifOutErrors`
    - **Headers:** เพิ่ม header
      - **Name:** `X-Auth-Token`
      - **Value:** `your-api-token-here` (ใส่ API Token จาก LAB 4)
    - **Return:** `a parsed JSON object`
    - คลิก **Done**
+
+**หมายเหตุ:**
+- ⚠️ **สำคัญ:** ต้องใช้ `/api/v0/ports?device_id=1&columns=...` เพื่อให้ได้ข้อมูลครบถ้วน
+- ❌ อย่าใช้ `/api/v0/devices/1/ports` (จะได้ข้อมูลไม่ครบ - เฉพาะ port_id และ ifName)
 
 #### 3. เพิ่ม Function Node
 
@@ -865,13 +869,33 @@ nodered     Up        0.0.0.0:1880->1880/tcp, 0.0.0.0:1883->1883/tcp
    - **Function:** ใส่ code:
 
 ```javascript
+// ตรวจสอบว่ามี payload หรือไม่
+if (!msg.payload) {
+    node.warn('❌ No payload received');
+    return null;
+}
+
+// ตรวจสอบ API status
+if (msg.payload.status !== 'ok') {
+    node.warn('❌ API Error: ' + (msg.payload.message || 'Unknown'));
+    return null;
+}
+
+// ตรวจสอบว่ามี ports array หรือไม่
+if (!msg.payload.ports || !Array.isArray(msg.payload.ports)) {
+    node.warn('❌ No ports array in response');
+    return null;
+}
+
 const ports = msg.payload.ports;
 const ether1 = ports.find(p => p.ifName === 'ether1');
 
 if (!ether1) {
-    node.error('ether1 not found', msg);
+    node.warn('❌ ether1 not found. Available ports: ' + ports.map(p => p.ifName).join(', '));
     return null;
 }
+
+node.warn('✅ ether1 found: ' + ether1.ifOperStatus);
 
 // ตำแหน่งของอุปกรณ์ (สำหรับแผนที่ 3D)
 const location = {
@@ -883,7 +907,7 @@ const location = {
 msg.payload = {
     timestamp: new Date().toISOString(),
     device: {
-        ip: '192.168.56.10',
+        ip: '192.168.56.101',
         name: 'MikroTik-Router',
         location: location
     },

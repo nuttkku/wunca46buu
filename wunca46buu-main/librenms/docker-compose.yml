@@ -58,7 +58,7 @@ services:
       TZ: ${TZ:-Asia/Bangkok}
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
-      APP_KEY: ${APP_KEY:-base64:changeme_generate_random_32_char_key_here}
+      APP_KEY: ${APP_KEY:-base64:/p/XUbwXONA7um4izS/rD/LY4K1L6PbeiMIq6igKb0A=}
       DB_HOST: ${DB_HOST:-db}
       DB_NAME: ${DB_NAME:-librenms}
       DB_USER: ${DB_USER:-librenms}

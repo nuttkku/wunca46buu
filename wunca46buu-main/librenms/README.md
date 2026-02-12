@@ -1250,6 +1250,57 @@ docker system prune -a
 
 ---
 
+### ปัญหา: Error 500 - Unsupported cipher or incorrect key length
+
+**อาการ:**
+- เข้าเว็บเจอ Error 500: `Unsupported cipher or incorrect key length`
+- หน้าเว็บไม่สามารถโหลดได้
+
+**สาเหตุ:** APP_KEY ไม่ถูกต้องหรือไม่ตรงกับรูปแบบที่ Laravel ต้องการ
+
+**วิธีแก้:**
+
+```bash
+# 1. Generate APP_KEY ใหม่
+docker exec -u librenms librenms sh -c "php /opt/librenms/artisan key:generate --show"
+
+# คัดลอก key ที่ได้ (ตัวอย่าง: base64:CxQcVhHfQVUw2Whgokh1PcuFOiERiqMM/TGBL9LMFAE=)
+```
+
+**2. แก้ไขไฟล์ `.env`** (บรรทัด 21):
+```bash
+APP_KEY=base64:CxQcVhHfQVUw2Whgokh1PcuFOiERiqMM/TGBL9LMFAE=
+```
+
+**3. (Optional) แก้ไขไฟล์ `docker-compose.yml`** (บรรทัด 61):
+```yaml
+environment:
+  - APP_KEY=${APP_KEY:-base64:CxQcVhHfQVUw2Whgokh1PcuFOiERiqMM/TGBL9LMFAE=}
+```
+
+**4. Restart Containers:**
+```bash
+# ⚠️ สำคัญ: ต้องใช้ down และ up ไม่ใช่ restart
+docker compose down
+docker compose up -d
+```
+
+**ตรวจสอบ:**
+```bash
+# ตรวจสอบ APP_KEY ใน container
+docker exec librenms sh -c "printenv APP_KEY"
+
+# ตรวจสอบเว็บ (ควรได้ 302 redirect)
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000
+```
+
+**หมายเหตุ:**
+- ⚠️ ต้องใช้ `docker compose down && up` ไม่ใช่ `restart` เพราะ environment variables โหลดตอน create container
+- Default login: `librenms` / `admin`
+- ควรเปลี่ยน passwords ก่อนใช้งานจริง
+
+---
+
 ## 📞 ข้อมูลเพิ่มเติม
 
 ### Default Configuration

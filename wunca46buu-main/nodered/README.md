@@ -82,22 +82,23 @@ LibreNMS API → Node-RED → MQTT Broker (Aedes) → 3D Platform (ทีมอ�
 ### Data Flow
 
 ```
-[Timer: Every 1 min]
+[Timer: Every 30s]
         │
         ▼
 [HTTP Request Node]
-   GET /api/v0/devices/192.168.56.10/ports
+   GET /api/v0/ports?device_id=1&columns=port_id,ifName,ifOperStatus,...
         │
         ▼
 [Function Node]
    - Parse JSON
    - Extract ether1 data
+   - Add location data
    - Format message
         │
         ▼
 [MQTT Output Node]
    Topic: mikrotik/ether1/status
-   Payload: {"status": "up", "speed": 1000, ...}
+   Payload: {"status": "up", "speed": 1000, "location": {...}}
         │
         ▼
 [Aedes MQTT Broker]
@@ -106,7 +107,7 @@ LibreNMS API → Node-RED → MQTT Broker (Aedes) → 3D Platform (ทีมอ�
         │
         ▼
 [MQTT Subscribers]
-   - IoT devices
+   - 3D Platform
    - Dashboards
    - Other applications
 ```
@@ -350,25 +351,28 @@ Flow ที่จะสร้างประกอบด้วย:
 
 1. ลาก **inject** node จาก palette มาวาง
 2. Double-click เพื่อตั้งค่า:
-   - **Name:** `Every 1 minute`
+   - **Name:** `Every 30 seconds`
    - **Repeat:** `interval`
-   - **Every:** `1` `minutes`
+   - **Every:** `30` `seconds`
    - คลิก **Done**
 
 ### Step 2: เพิ่ม HTTP Request Node
 
 1. ลาก **http request** node มาวาง
 2. Double-click เพื่อตั้งค่า:
-   - **Name:** `Get ether1 status`
+   - **Name:** `Get mikrotik status`
    - **Method:** `GET`
-   - **URL:** `http://librenms:8000/api/v0/devices/192.168.56.10/ports`
+   - **URL:** `http://librenms:8000/api/v0/ports?device_id=1&columns=port_id,ifName,ifOperStatus,ifAdminStatus,ifSpeed,ifMtu,ifPhysAddress,ifInOctets,ifOutOctets,ifInUcastPkts,ifOutUcastPkts,ifInErrors,ifOutErrors`
    - **Headers:** คลิก **+ add** เพื่อเพิ่ม header
      - **Name:** `X-Auth-Token`
      - **Value:** `your-api-token-here` (ใส่ API Token จริง)
    - **Return:** `a parsed JSON object`
    - คลิก **Done**
 
-**หมายเหตุ:** ใช้ `librenms` แทน `localhost` เพราะอยู่ใน Docker network เดียวกัน
+**หมายเหตุ:**
+- ใช้ `librenms` แทน `localhost` เพราะอยู่ใน Docker network เดียวกัน
+- ⚠️ **สำคัญ:** ต้องใช้ `/api/v0/ports?device_id=1&columns=...` พร้อมระบุ columns ทั้งหมด
+- ❌ อย่าใช้ `/api/v0/devices/1/ports` (จะได้ข้อมูลไม่ครบ)
 
 ### Step 3: เพิ่ม Function Node
 
@@ -378,37 +382,52 @@ Flow ที่จะสร้างประกอบด้วย:
    - **Function:** ใส่ code นี้:
 
 ```javascript
-// Extract ports from response
-const ports = msg.payload.ports;
-
-// Find ether1
-const ether1 = ports.find(p => p.ifName === 'ether1');
-
-if (!ether1) {
-    node.error('ether1 not found', msg);
+// ตรวจสอบว่ามี payload หรือไม่
+if (!msg.payload) {
+    node.warn('❌ No payload received');
     return null;
 }
 
+// ตรวจสอบ API status
+if (msg.payload.status !== 'ok') {
+    node.warn('❌ API Error: ' + (msg.payload.message || 'Unknown'));
+    return null;
+}
+
+// ตรวจสอบว่ามี ports array หรือไม่
+if (!msg.payload.ports || !Array.isArray(msg.payload.ports)) {
+    node.warn('❌ No ports array in response');
+    return null;
+}
+
+const ports = msg.payload.ports;
+const ether1 = ports.find(p => p.ifName === 'ether1');
+
+if (!ether1) {
+    node.warn('❌ ether1 not found. Available ports: ' + ports.map(p => p.ifName).join(', '));
+    return null;
+}
+
+node.warn('✅ ether1 found: ' + ether1.ifOperStatus);
+
 // ตำแหน่งของอุปกรณ์ (สำหรับแผนที่ 3D)
-// แก้ไขค่าตามตำแหน่งจริงของอุปกรณ์
 const location = {
-    lat: 16.4322,        // Latitude (เช่น มหาวิทยาลัยขอนแก่น)
+    lat: 16.4322,        // Latitude
     long: 102.8236,      // Longitude
-    altitude: 170        // ความสูงจากระดับน้ำทะเล (เมตร)
+    altitude: 170        // ความสูง (เมตร)
 };
 
-// Create message for MQTT
 msg.payload = {
     timestamp: new Date().toISOString(),
     device: {
-        ip: '192.168.56.10',
+        ip: '192.168.56.101',
         name: 'MikroTik-Router',
-        location: location  // ตำแหน่งสำหรับแผนที่ 3D
+        location: location
     },
     interface: ether1.ifName,
     status: ether1.ifOperStatus,
     adminStatus: ether1.ifAdminStatus,
-    speed: ether1.ifSpeed / 1000000, // Convert to Mbps
+    speed: ether1.ifSpeed / 1000000,
     mtu: ether1.ifMtu,
     macAddress: ether1.ifPhysAddress,
     statistics: {
@@ -421,9 +440,7 @@ msg.payload = {
     }
 };
 
-// Set MQTT topic
 msg.topic = 'mikrotik/ether1/status';
-
 return msg;
 ```
 
@@ -733,6 +750,28 @@ return [messages]; // Send array of messages
 
 ## 🐛 Troubleshooting
 
+### ปัญหา: ได้ข้อมูล undefined หรือ null
+
+**อาการ:**
+- Debug output แสดง `ifOperStatus: undefined`
+- หรือ `✅ ether1 found: undefined`
+
+**สาเหตุ:**
+- ใช้ API endpoint ผิด `/api/v0/devices/1/ports` (ได้ข้อมูลไม่ครบ)
+- ไม่ได้ระบุ `columns` parameter
+
+**แก้ไข:**
+เปลี่ยนไปใช้ endpoint ที่ถูกต้อง:
+```
+http://librenms:8000/api/v0/ports?device_id=1&columns=port_id,ifName,ifOperStatus,ifAdminStatus,ifSpeed,ifMtu,ifPhysAddress,ifInOctets,ifOutOctets,ifInUcastPkts,ifOutUcastPkts,ifInErrors,ifOutErrors
+```
+
+**เหตุผล:**
+- `/api/v0/devices/{id}/ports` = ข้อมูลพื้นฐานเท่านั้น (port_id, ifName)
+- `/api/v0/ports?device_id={id}&columns=...` = ข้อมูลครบตาม columns ที่ระบุ
+
+---
+
 ### ปัญหา: Node-RED ไม่สามารถเชื่อมต่อ LibreNMS
 
 **อาการ:**
@@ -789,15 +828,36 @@ Error: Unauthorized (401)
 ```
 
 **แก้ไข:**
-- ตรวจสอบ API Token ถูกต้องหรือไม่
-- ตรวจสอบ Header format:
-  ```
-  X-Auth-Token: your-actual-token
-  ```
-- สร้าง Token ใหม่ใน LibreNMS:
-  ```bash
-  docker exec librenms lnms user:add-token admin
-  ```
+1. ตรวจสอบ API Token ถูกต้องหรือไม่
+2. ตรวจสอบ Header format:
+   ```
+   X-Auth-Token: your-actual-token
+   ```
+3. สร้าง Token ใหม่ใน LibreNMS:
+   - เข้า Web UI → My Settings → API Settings
+   - หรือใช้ command:
+   ```bash
+   docker exec librenms lnms user:add-token admin
+   ```
+
+---
+
+### ปัญหา: HTTP Request returns 404
+
+**อาการ:**
+```
+Error: Not Found (404)
+```
+
+**สาเหตุ:** ใช้ API endpoint ผิด
+
+**แก้ไข:**
+เปลี่ยนจาก `/api/v0/device/1/ports` (ไม่มี s) → `/api/v0/devices/1/ports` (มี s)
+
+หรือใช้ endpoint ที่แนะนำ:
+```
+/api/v0/ports?device_id=1&columns=...
+```
 
 ### ปัญหา: No data in MQTT
 
