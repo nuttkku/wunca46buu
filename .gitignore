@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# npm cache
+.npm/
+*/.npm/
+**/.npm/
+
+# Environment files
+.env
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker volumes (keep only configs)
+librenms/data/
+librenms/logs/
+librenms/rrd/
+nodered/nodered_data/node_modules/
+nodered/nodered_data/.npm/

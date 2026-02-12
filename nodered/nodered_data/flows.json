@@ -1,0 +1,204 @@
+[
+    {
+        "id": "dc1fce93cd0371a3",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "a6d847a0adc6e2f1",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "61d99ba4c51b0d3c",
+        "type": "aedes broker",
+        "z": "dc1fce93cd0371a3",
+        "name": "MQTT Broker",
+        "mqtt_port": 1883,
+        "mqtt_ws_bind": "port",
+        "mqtt_ws_port": "",
+        "mqtt_ws_path": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "persistence_bind": "memory",
+        "dburl": "",
+        "usetls": false,
+        "x": 310,
+        "y": 80,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "6113dda9bc8d6668",
+        "type": "inject",
+        "z": "dc1fce93cd0371a3",
+        "name": "Every 1 minute",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 100,
+        "y": 80,
+        "wires": [
+            [
+                "fe4f33d2ad4acfb2"
+            ]
+        ]
+    },
+    {
+        "id": "fe4f33d2ad4acfb2",
+        "type": "http request",
+        "z": "dc1fce93cd0371a3",
+        "name": "Get mikrotik status",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://librenms:8000/api/v0/ports?device_id=1&columns=port_id,ifName,ifOperStatus,ifAdminStatus,ifSpeed,ifMtu,ifPhysAddress,ifInOctets,ifOutOctets,ifInUcastPkts,ifOutUcastPkts,ifInErrors,ifOutErrors",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "other",
+                "keyValue": "X-Auth-Token",
+                "valueType": "other",
+                "valueValue": "d2bc063512199dcd35b4c4d7e04bca32"
+            }
+        ],
+        "x": 330,
+        "y": 180,
+        "wires": [
+            [
+                "a29631d63cd40439",
+                "b3a821c5af2dce95"
+            ]
+        ]
+    },
+    {
+        "id": "a29631d63cd40439",
+        "type": "function",
+        "z": "dc1fce93cd0371a3",
+        "name": "Extract ether1 data",
+        "func": "// ตรวจสอบว่ามี payload หรือไม่\nif (!msg.payload) {\n    node.warn('❌ No payload received');\n    return null;\n}\n\n// ตรวจสอบ API status\nif (msg.payload.status !== 'ok') {\n    node.warn('❌ API Error: ' + (msg.payload.message || 'Unknown'));\n    return null;\n}\n\n// ตรวจสอบว่ามี ports array หรือไม่\nif (!msg.payload.ports || !Array.isArray(msg.payload.ports)) {\n    node.warn('❌ No ports array in response');\n    return null;\n}\n\nconst ports = msg.payload.ports;\nconst ether1 = ports.find(p => p.ifName === 'ether1');\n\nif (!ether1) {\n    node.warn('❌ ether1 not found. Available ports: ' + ports.map(p => p.ifName).join(', '));\n    return null;\n}\n\nnode.warn('✅ ether1 found: ' + ether1.ifOperStatus);\n\n// ตำแหน่งของอุปกรณ์ (สำหรับแผนที่ 3D)\nconst location = {\n    lat: 16.4322,        // Latitude\n    long: 102.8236,      // Longitude\n    altitude: 170        // ความสูง (เมตร)\n};\n\nmsg.payload = {\n    timestamp: new Date().toISOString(),\n    device: {\n        ip: '192.168.56.101',\n        name: 'MikroTik-Router',\n        location: location\n    },\n    interface: ether1.ifName,\n    status: ether1.ifOperStatus,\n    adminStatus: ether1.ifAdminStatus,\n    speed: ether1.ifSpeed / 1000000,\n    mtu: ether1.ifMtu,\n    macAddress: ether1.ifPhysAddress,\n    statistics: {\n        inOctets: ether1.ifInOctets || 0,\n        outOctets: ether1.ifOutOctets || 0,\n        inPackets: ether1.ifInUcastPkts || 0,\n        outPackets: ether1.ifOutUcastPkts || 0,\n        inErrors: ether1.ifInErrors || 0,\n        outErrors: ether1.ifOutErrors || 0\n    }\n};\n\nmsg.topic = 'mikrotik/ether1/status';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 300,
+        "wires": [
+            [
+                "fce9e3489d0c88c1",
+                "5ab7d8bf3d9cf297"
+            ]
+        ]
+    },
+    {
+        "id": "fce9e3489d0c88c1",
+        "type": "mqtt out",
+        "z": "dc1fce93cd0371a3",
+        "name": "Publish to MQTT",
+        "topic": "",
+        "qos": "0",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "a6d847a0adc6e2f1",
+        "x": 830,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "5ab7d8bf3d9cf297",
+        "type": "debug",
+        "z": "dc1fce93cd0371a3",
+        "name": "Debug output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 820,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "b3a821c5af2dce95",
+        "type": "function",
+        "z": "dc1fce93cd0371a3",
+        "name": "Extract ether2 data",
+        "func": "// ตรวจสอบว่ามี payload หรือไม่\nif (!msg.payload) {\n    node.warn('❌ No payload received');\n    return null;\n}\n\n// ตรวจสอบ API status\nif (msg.payload.status !== 'ok') {\n    node.warn('❌ API Error: ' + (msg.payload.message || 'Unknown'));\n    return null;\n}\n\n// ตรวจสอบว่ามี ports array หรือไม่\nif (!msg.payload.ports || !Array.isArray(msg.payload.ports)) {\n    node.warn('❌ No ports array in response');\n    return null;\n}\n\nconst ports = msg.payload.ports;\nconst ether2 = ports.find(p => p.ifName === 'ether2');\n\nif (!ether2) {\n    node.warn('❌ ether2 not found. Available ports: ' + ports.map(p => p.ifName).join(', '));\n    return null;\n}\n\nnode.warn('✅ ether2 found: ' + ether2.ifOperStatus);\n\n// ตำแหน่งของอุปกรณ์ (สำหรับแผนที่ 3D)\nconst location = {\n    lat: 16.4322,        // Latitude\n    long: 102.8236,      // Longitude\n    altitude: 170        // ความสูง (เมตร)\n};\n\nmsg.payload = {\n    timestamp: new Date().toISOString(),\n    device: {\n        ip: '192.168.56.101',\n        name: 'MikroTik-Router',\n        location: location\n    },\n    interface: ether2.ifName,\n    status: ether2.ifOperStatus,\n    adminStatus: ether2.ifAdminStatus,\n    speed: ether2.ifSpeed / 1000000,\n    mtu: ether2.ifMtu,\n    macAddress: ether2.ifPhysAddress,\n    statistics: {\n        inOctets: ether2.ifInOctets || 0,\n        outOctets: ether2.ifOutOctets || 0,\n        inPackets: ether2.ifInUcastPkts || 0,\n        outPackets: ether2.ifOutUcastPkts || 0,\n        inErrors: ether2.ifInErrors || 0,\n        outErrors: ether2.ifOutErrors || 0\n    }\n};\n\nmsg.topic = 'mikrotik/ether2/status';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 380,
+        "wires": [
+            [
+                "5ab7d8bf3d9cf297",
+                "fce9e3489d0c88c1"
+            ]
+        ]
+    }
+]
