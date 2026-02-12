@@ -27,6 +27,11 @@ Thumbs.db
 *.swo
 *~
 
+# Claude files
+.claude/
+*/.claude/
+**/.claude/
+
 # Docker volumes (keep only configs)
 librenms/data/
 librenms/logs/
