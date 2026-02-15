@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Display a globe with a fill extrusion layer</title>
+    <meta property="og:description" content="Display a globe with a fill extrusion layer." />
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js'></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        html, body, #map { height: 100%; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/bright', // Base map is Tile
+        center: [102.82122552134484,16.4729660983578],
+        zoom: 14.5
+    });
+
+    map.addControl(new maplibregl.GlobeControl(), 'top-right');
+
+    map.on('style.load', () => {
+        map.setProjection({
+            type: 'globe', // Set projection to globe
+        });
+    });
+
+    map.on('load', () => {
+        map.addSource('extrude-polygons', {
+            'type': 'geojson',
+            'data': {
+                'type': 'FeatureCollection',
+                'features': [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        'height': 100,
+                        'color': '#ff0044'
+                    },
+                    "geometry": {
+                      "coordinates": [
+                        [
+                          [
+                            102.82123836497823,
+                            16.474641142570974
+                          ],
+                          [
+                            102.8212325413499,
+                            16.47427628553764
+                          ],
+                          [
+                            102.82158195904304,
+                            16.474280008572222
+                          ],
+                          [
+                            102.82158584146202,
+                            16.474246501259813
+                          ],
+                          [
+                            102.82166931346575,
+                            16.474246501259813
+                          ],
+                          [
+                            102.82166737225629,
+                            16.47431351587879
+                          ],
+                          [
+                            102.82194884762032,
+                            16.474315377395726
+                          ],
+                          [
+                            102.82197214213278,
+                            16.474047318783278
+                          ],
+                          [
+                            102.8222225581464,
+                            16.474060349419332
+                          ],
+                          [
+                            102.82221867572753,
+                            16.474629973487893
+                          ],
+                          [
+                            102.82123836497823,
+                            16.474641142570974
+                          ]
+                        ]
+                      ],
+                      "type": "Polygon"
+                    }
+                  }
+                ,
+                {
+                    "type": "Feature",
+                    "properties": {
+                        'height': 50,
+                        'color': '#ff0044'
+                    },
+                    "geometry": {
+                      "coordinates": [
+                        [
+                          [
+                            102.82339285897126,
+                            16.47372006490579
+                          ],
+                          [
+                            102.82339480018078,
+                            16.473535774082734
+                          ],
+                          [
+                            102.82371509973188,
+                            16.47354135865588
+                          ],
+                          [
+                            102.82371509973188,
+                            16.473440836318105
+                          ],
+                          [
+                            102.82365492224056,
+                            16.473438974792785
+                          ],
+                          [
+                            102.82365880465954,
+                            16.47327329897263
+                          ],
+                          [
+                            102.82393833881412,
+                            16.473280745080217
+                          ],
+                          [
+                            102.82393251518567,
+                            16.4734575900453
+                          ],
+                          [
+                            102.82387427890387,
+                            16.473463174619525
+                          ],
+                          [
+                            102.82386845527543,
+                            16.473556250850166
+                          ],
+                          [
+                            102.8241887548266,
+                            16.473554389325955
+                          ],
+                          [
+                            102.82419457845492,
+                            16.473727510995005
+                          ],
+                          [
+                            102.82339285897126,
+                            16.47372006490579
+                          ]
+                        ]
+                      ],
+                      "type": "Polygon"
+                    }
+                  }
+                ]
+            }
+        });
+        map.addLayer({
+            'id': 'extrude-polygon-layer',
+            'source': 'extrude-polygons',
+            'type': 'fill-extrusion',
+            'paint': {
+                'fill-extrusion-color': ['get', 'color'],
+                'fill-extrusion-opacity': 1,
+                'fill-extrusion-height': ['get', 'height'],
+            }
+        });
+    });
+</script>
+</body>
+</html>
