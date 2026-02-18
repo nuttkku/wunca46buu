@@ -4,10 +4,7 @@
       "Bash(docker network create:*)",
       "Bash(docker network connect:*)",
       "Bash(docker-compose up:*)",
-      "Bash(docker-compose logs:*)",
-      "Bash(git config:*)",
-      "Bash(git fetch:*)",
-      "Bash(git -c core.protectNTFS=false merge origin/main --no-ff -m \"Merge from origin/main\")"
+      "Bash(docker-compose logs:*)"
     ]
   }
 }
