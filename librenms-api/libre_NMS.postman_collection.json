@@ -1,0 +1,69 @@
+{
+  "info": {
+    "_postman_id": "cbcd3886-a3ef-4324-b1e9-ebca5d4b4c73",
+    "name": "libre NMS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "6807483"
+  },
+  "item": [
+    {
+      "name": "GET Status by PORT ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{host}}/api/v0/ports/126",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "api",
+            "v0",
+            "ports",
+            "126"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET Port List",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{host}}/api/v0/ports",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "api",
+            "v0",
+            "ports"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
