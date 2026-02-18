@@ -4,7 +4,8 @@
       "Bash(docker network create:*)",
       "Bash(docker network connect:*)",
       "Bash(docker-compose up:*)",
-      "Bash(docker-compose logs:*)"
+      "Bash(docker-compose logs:*)",
+      "Bash(git ls-tree:*)"
     ]
   }
 }
